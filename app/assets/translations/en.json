@@ -1,0 +1,41 @@
+{
+  "common": {
+    "app_name": "NGO Fellow & Volunteer App",
+    "loading": "Loading...",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "generic_error": "Something went wrong. Please try again."
+  },
+  "auth": {
+    "login_title": "Log in",
+    "signup_title": "Create an account",
+    "email_label": "Email",
+    "password_label": "Password",
+    "new_password_label": "New password",
+    "login_button": "Log in",
+    "signup_button": "Sign up",
+    "logout_button": "Log out",
+    "forgot_password": "Forgot password?",
+    "reset_password_title": "Reset password",
+    "send_reset_link_button": "Send reset link",
+    "verify_email_title": "Verify your email",
+    "verify_email_pending": "We sent a verification link to your email. Open it on this device to continue.",
+    "resend_verification_button": "Resend verification email",
+    "signup_success_message": "Check your email for a verification link.",
+    "invalid_credentials": "Invalid email or password.",
+    "no_account_prompt": "Don't have an account?",
+    "have_account_prompt": "Already have an account?"
+  },
+  "onboarding": {
+    "title": "Get started",
+    "step_account_created": "Account created",
+    "step_email_verified": "Email verified",
+    "step_profile_pending": "Complete your profile",
+    "step_active": "All set"
+  },
+  "health": {
+    "status_title": "System status",
+    "status_ok": "Backend is reachable and healthy."
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "common": {
+    "app_name": "एनजीओ फेलो और स्वयंसेवक ऐप",
+    "loading": "लोड हो रहा है...",
+    "retry": "फिर से कोशिश करें",
+    "cancel": "रद्द करें",
+    "submit": "जमा करें",
+    "generic_error": "कुछ गलत हो गया। कृपया फिर से प्रयास करें।"
+  },
+  "auth": {
+    "login_title": "लॉग इन करें",
+    "signup_title": "खाता बनाएं",
+    "email_label": "ईमेल",
+    "password_label": "पासवर्ड",
+    "new_password_label": "नया पासवर्ड",
+    "login_button": "लॉग इन करें",
+    "signup_button": "साइन अप करें",
+    "logout_button": "लॉग आउट करें",
+    "forgot_password": "पासवर्ड भूल गए?",
+    "reset_password_title": "पासवर्ड रीसेट करें",
+    "send_reset_link_button": "रीसेट लिंक भेजें",
+    "verify_email_title": "अपना ईमेल सत्यापित करें",
+    "verify_email_pending": "हमने आपके ईमेल पर एक सत्यापन लिंक भेजा है। जारी रखने के लिए इसे इस डिवाइस पर खोलें।",
+    "resend_verification_button": "सत्यापन ईमेल फिर से भेजें",
+    "signup_success_message": "सत्यापन लिंक के लिए अपना ईमेल जांचें।",
+    "invalid_credentials": "अमान्य ईमेल या पासवर्ड।",
+    "no_account_prompt": "खाता नहीं है?",
+    "have_account_prompt": "पहले से ही खाता है?"
+  },
+  "onboarding": {
+    "title": "शुरू करें",
+    "step_account_created": "खाता बनाया गया",
+    "step_email_verified": "ईमेल सत्यापित",
+    "step_profile_pending": "अपनी प्रोफ़ाइल पूरी करें",
+    "step_active": "सब तैयार है"
+  },
+  "health": {
+    "status_title": "सिस्टम स्थिति",
+    "status_ok": "बैकएंड पहुंच योग्य और स्वस्थ है।"
+  }
+}
