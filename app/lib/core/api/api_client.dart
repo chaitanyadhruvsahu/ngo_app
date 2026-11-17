@@ -13,7 +13,11 @@ import 'package:ngo_app/core/config/app_config.dart';
 class ApiClient {
   ApiClient({required TokenStorage tokenStorage, this.onSessionExpired})
       : _tokenStorage = tokenStorage,
-        dio = Dio(BaseOptions(baseUrl: AppConfig.apiBaseUrl)) {
+        // withCredentials: on web this makes the browser send/accept the
+        // httpOnly refresh-token cookie (ADR-0007); ignored on other
+        // platforms, which don't have a cookie jar in the same sense.
+        dio = Dio(BaseOptions(
+            baseUrl: AppConfig.apiBaseUrl, extra: {'withCredentials': true})) {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
@@ -26,27 +30,44 @@ class ApiClient {
           handler.next(options);
         },
         onError: (error, handler) async {
-          final isUnauthorized = error.response?.statusCode == 401;
-          final alreadyRetried = error.requestOptions.extra['retried'] == true;
-          final hasRefreshToken = await _tokenStorage.readRefreshToken() != null;
-
-          if (isUnauthorized && !alreadyRetried && hasRefreshToken) {
-            final refreshed = await _refreshAccessToken();
-            if (refreshed != null) {
-              final retryOptions = error.requestOptions..extra['retried'] = true;
-              retryOptions.headers['Authorization'] = 'Bearer $refreshed';
-              try {
-                final response = await dio.fetch(retryOptions);
-                handler.resolve(response);
-                return;
-              } on DioException catch (retryError) {
-                handler.next(retryError);
-                return;
-              }
-            }
-            await _tokenStorage.clear();
-            onSessionExpired?.call();
+          if (error.response?.statusCode != 401 ||
+              error.requestOptions.extra['skipRefresh'] == true) {
+            handler.next(error);
+            return;
           }
+          if (error.requestOptions.extra['retried'] == true) {
+            await _expireSession();
+            handler.next(error);
+            return;
+          }
+          try {
+            // A late response for the old token must not rotate the newly
+            // refreshed cookie again after another request already succeeded.
+            final current = await _tokenStorage.readAccessToken();
+            final sent = error.requestOptions.headers['Authorization'];
+            final token = current != null && sent != 'Bearer $current'
+                ? current
+                : await _refreshAccessToken();
+            if (token != null) {
+              final retry = error.requestOptions..extra['retried'] = true;
+              retry.headers['Authorization'] = 'Bearer $token';
+              final rebuild = retry.extra['rebuildBody'];
+              if (rebuild is FormData Function()) {
+                retry.data = rebuild();
+              } else if (retry.data is FormData) {
+                retry.data = (retry.data as FormData).clone();
+              }
+              final response = await dio.fetch<dynamic>(retry);
+              handler.resolve(response);
+              return;
+            }
+          } on DioException catch (retryError) {
+            handler.next(retryError);
+            return;
+          } catch (_) {
+            // Storage/cast failures must finish the request, not hang the UI.
+          }
+          await _expireSession();
           handler.next(error);
         },
       ),
@@ -61,28 +82,53 @@ class ApiClient {
   void Function()? onSessionExpired;
 
   Future<String?>? _refreshFuture;
+  bool _expiring = false;
+
+  Future<void> _expireSession() async {
+    if (_expiring) return;
+    _expiring = true;
+    try {
+      await _tokenStorage.clear();
+    } catch (_) {
+      // Redirect even when secure storage is unavailable.
+    } finally {
+      onSessionExpired?.call();
+      _expiring = false;
+    }
+  }
 
   Future<String?> _refreshAccessToken() {
     // Coalesce concurrent 401s into a single refresh call.
-    return _refreshFuture ??= _performRefresh().whenComplete(() => _refreshFuture = null);
+    return _refreshFuture ??=
+        _performRefresh().whenComplete(() => _refreshFuture = null);
   }
 
   Future<String?> _performRefresh() async {
-    final refreshToken = await _tokenStorage.readRefreshToken();
-    if (refreshToken == null) return null;
-
+    // Mobile sends its securely-stored refresh token in the body; web sends
+    // none — the browser attaches the httpOnly cookie itself, which the
+    // backend falls back to when the body has no refresh_token (ADR-0007).
     try {
+      final refreshToken = await _tokenStorage.readRefreshToken();
       final response = await dio.post<Map<String, dynamic>>(
         '/auth/refresh',
-        data: {'refresh_token': refreshToken},
-        options: Options(extra: {'skipAuthHeader': true}),
+        data: refreshToken != null
+            ? {'refresh_token': refreshToken}
+            : <String, dynamic>{},
+        options: Options(extra: {
+          'skipAuthHeader': true,
+          'skipRefresh': true,
+          'withCredentials': true
+        }),
       );
       final data = response.data!;
       final newAccessToken = data['access_token'] as String;
-      final newRefreshToken = data['refresh_token'] as String? ?? refreshToken;
-      await _tokenStorage.saveTokens(accessToken: newAccessToken, refreshToken: newRefreshToken);
+      // ROTATE_REFRESH_TOKENS is on server-side, so a successful refresh
+      // always returns a new refresh_token too.
+      final newRefreshToken = data['refresh_token'] as String;
+      await _tokenStorage.saveTokens(
+          accessToken: newAccessToken, refreshToken: newRefreshToken);
       return newAccessToken;
-    } on DioException {
+    } catch (_) {
       return null;
     }
   }
@@ -93,11 +139,13 @@ class ApiClient {
   static ApiException toApiException(DioException error) {
     final data = error.response?.data;
     if (data is Map<String, dynamic>) {
-      return ApiException.fromEnvelope(data, statusCode: error.response?.statusCode);
+      return ApiException.fromEnvelope(data,
+          statusCode: error.response?.statusCode);
     }
     return ApiException(
       code: 'network_error',
-      message: 'Could not reach the server. Check your connection and try again.',
+      message:
+          'Could not reach the server. Check your connection and try again.',
       statusCode: error.response?.statusCode,
     );
   }

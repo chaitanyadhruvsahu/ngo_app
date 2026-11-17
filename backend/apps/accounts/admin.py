@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
 from apps.accounts.forms import UserChangeAdminForm, UserCreationAdminForm
-from apps.accounts.models import FellowProfile, User
+from apps.accounts.models import Block, FellowProfile, User
 
 
 @admin.register(User)
@@ -39,7 +39,17 @@ class UserAdmin(DjangoUserAdmin):
 
 @admin.register(FellowProfile)
 class FellowProfileAdmin(admin.ModelAdmin):
-    list_display = ["user", "onboarding_step", "created_at"]
-    list_filter = ["onboarding_step"]
-    search_fields = ["user__email"]
+    list_display = ["user", "block", "onboarding_step", "created_at"]
+    list_filter = ["onboarding_step", "block"]
+    search_fields = ["user__email", "full_name"]
+    # Aadhaar/bank fields are intentionally excluded from Django admin's
+    # list_display/search — no bulk browsing of decrypted sensitive values
+    # through a general-purpose admin UI (Phase 2 mandate, Security).
+    readonly_fields = ["id", "created_at", "updated_at"]
+
+
+@admin.register(Block)
+class BlockAdmin(admin.ModelAdmin):
+    list_display = ["name", "created_at"]
+    search_fields = ["name"]
     readonly_fields = ["id", "created_at"]

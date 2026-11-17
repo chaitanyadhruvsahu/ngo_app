@@ -7,7 +7,8 @@ Single Flutter codebase targeting Web and Android (ADR-0001). State management i
 
 ```bash
 flutter pub get
-flutter run -d chrome                       # web
+flutter run -d chrome --web-port=5173        # web — pinned so it matches backend/.env.example's
+                                              # CORS_ALLOWED_ORIGINS / FRONTEND_BASE_URL out of the box
 flutter run                                  # connected Android device/emulator
 flutter analyze
 flutter test

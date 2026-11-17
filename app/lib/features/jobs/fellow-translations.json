@@ -1,0 +1,36 @@
+{
+  "en": {
+    "mine": "My jobs", "status": "Status", "refresh": "Refresh", "all": "All statuses",
+    "expected_hours": "Expected hours", "previous": "Previous page", "next": "Next page",
+    "empty": "No jobs assigned yet.", "load_error": "Could not load this job information. Refresh to try again.",
+    "detail": "Job details", "deadline": "Deadline", "camera_error": "Camera could not open. Check camera permission and try again.",
+    "action_error": "Could not complete this action. Please try again.", "photo_required": "Capture at least one photo before submitting.",
+    "start": "Start work", "submit_title": "Submit completed work", "actual_hours": "Actual hours",
+    "hours_error": "Enter hours greater than 0 and no more than 9999.99, with at most two decimal places.",
+    "browser_evidence": "Browser evidence: browser selection cannot verify that a photo was taken now. Use the mobile app for native camera capture.",
+    "camera_evidence": "Take up to five photos using your camera. Your submission will be reviewed by an Admin.",
+    "remove_photo": "Remove photo", "browser_capture": "Add browser evidence", "capture": "Take photo",
+    "location_consent": "Share my current location with this submission", "location_optional": "Optional. If location is unavailable or permission is denied, your submission still goes through.",
+    "submit": "Submit for review", "submission_history": "Submission history", "review_reason": "Review reason",
+    "view_photo": "View photo", "history": "Activity history", "actor": "By", "close": "Close",
+    "status_created": "Created", "status_assigned": "Assigned", "status_in_progress": "In progress", "status_submitted": "Submitted",
+    "status_approved": "Approved", "status_rejected": "Rejected", "status_reassigned": "Reassigned", "status_pending": "Pending review"
+  },
+  "hi": {
+    "mine": "मेरे कार्य", "status": "स्थिति", "refresh": "ताज़ा करें", "all": "सभी स्थितियाँ",
+    "expected_hours": "अनुमानित घंटे", "previous": "पिछला पृष्ठ", "next": "अगला पृष्ठ",
+    "empty": "अभी कोई कार्य नहीं सौंपा गया है।", "load_error": "कार्य की जानकारी लोड नहीं हो सकी। फिर से ताज़ा करें।",
+    "detail": "कार्य का विवरण", "deadline": "अंतिम तिथि", "camera_error": "कैमरा नहीं खुल सका। कैमरे की अनुमति जाँचें और फिर कोशिश करें।",
+    "action_error": "यह कार्रवाई पूरी नहीं हो सकी। फिर कोशिश करें।", "photo_required": "जमा करने से पहले कम से कम एक फोटो लें।",
+    "start": "कार्य शुरू करें", "submit_title": "पूरा किया गया कार्य जमा करें", "actual_hours": "वास्तविक घंटे",
+    "hours_error": "0 से अधिक और 9999.99 तक घंटे भरें; अधिकतम दो दशमलव अंक स्वीकार हैं।",
+    "browser_evidence": "ब्राउज़र प्रमाण: ब्राउज़र में चयन से यह सत्यापित नहीं होता कि फोटो अभी लिया गया है। कैमरे से फोटो लेने के लिए मोबाइल ऐप उपयोग करें।",
+    "camera_evidence": "कैमरे से अधिकतम पाँच फोटो लें। एडमिन आपके जमा किए कार्य की समीक्षा करेंगे।",
+    "remove_photo": "फोटो हटाएँ", "browser_capture": "ब्राउज़र प्रमाण जोड़ें", "capture": "फोटो लें",
+    "location_consent": "इस कार्य के साथ मेरा वर्तमान स्थान साझा करें", "location_optional": "वैकल्पिक। स्थान उपलब्ध न होने या अनुमति न देने पर भी कार्य जमा होगा।",
+    "submit": "समीक्षा के लिए जमा करें", "submission_history": "जमा किए कार्य का इतिहास", "review_reason": "समीक्षा का कारण",
+    "view_photo": "फोटो देखें", "history": "गतिविधि का इतिहास", "actor": "कर्ता", "close": "बंद करें",
+    "status_created": "बनाया गया", "status_assigned": "सौंपा गया", "status_in_progress": "कार्य जारी", "status_submitted": "जमा किया गया",
+    "status_approved": "स्वीकृत", "status_rejected": "अस्वीकृत", "status_reassigned": "फिर सौंपा गया", "status_pending": "समीक्षा लंबित"
+  }
+}

@@ -42,7 +42,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           );
       if (mounted) setState(() => _submitted = true);
     } on ApiException catch (error) {
-      setState(() => _errorMessage = error.message);
+      setState(() => _errorMessage = error.userMessage);
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -68,7 +68,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(Icons.mark_email_read_outlined, size: 48, color: AppColors.primary),
+        const Icon(Icons.mark_email_read_outlined,
+            size: 48, color: AppColors.primary),
         const SizedBox(height: AppSpacing.md),
         Text(t('auth.signup_success_message'), textAlign: TextAlign.center),
         const SizedBox(height: AppSpacing.lg),
@@ -91,7 +92,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             keyboardType: TextInputType.emailAddress,
             autofillHints: const [AutofillHints.email],
             decoration: InputDecoration(labelText: t('auth.email_label')),
-            validator: (value) => (value == null || !value.contains('@')) ? t('auth.email_label') : null,
+            validator: (value) => (value == null || !value.contains('@'))
+                ? t('auth.email_error')
+                : null,
           ),
           const SizedBox(height: AppSpacing.md),
           TextFormField(
@@ -99,18 +102,23 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             obscureText: true,
             autofillHints: const [AutofillHints.newPassword],
             decoration: InputDecoration(labelText: t('auth.password_label')),
-            validator: (value) =>
-                (value == null || value.length < 10) ? t('auth.password_label') : null,
+            validator: (value) => (value == null || value.length < 10)
+                ? t('auth.password_error')
+                : null,
           ),
           if (_errorMessage != null) ...[
             const SizedBox(height: AppSpacing.md),
-            Text(_errorMessage!, style: const TextStyle(color: AppColors.error)),
+            Text(_errorMessage!,
+                style: const TextStyle(color: AppColors.error)),
           ],
           const SizedBox(height: AppSpacing.lg),
           ElevatedButton(
             onPressed: _isSubmitting ? null : _submit,
             child: _isSubmitting
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2))
                 : Text(t('auth.signup_button')),
           ),
         ],

@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:ngo_app/core/api/api_client.dart';
 import 'package:ngo_app/core/api/token_storage.dart';
 import 'package:ngo_app/core/providers.dart';
 import 'package:ngo_app/features/auth/application/auth_state.dart';
@@ -31,11 +30,19 @@ class AuthController extends StateNotifier<AuthState> {
   final TokenStorage _tokenStorage;
 
   Future<void> _bootstrap() async {
-    final accessToken = await _tokenStorage.readAccessToken();
-    final role = await _tokenStorage.readRole();
-    if (accessToken != null && role != null) {
-      state = AuthState(status: AuthStatus.authenticated, role: role);
-    } else {
+    try {
+      final accessToken = await _tokenStorage.readAccessToken();
+      final role = await _tokenStorage.readRole();
+      if (accessToken != null && role != null) {
+        state = AuthState(status: AuthStatus.authenticated, role: role);
+      } else {
+        state = AuthState.unauthenticated;
+      }
+    } catch (_) {
+      // Corrupt/undecryptable storage (e.g. a stale encryption key left
+      // over from a previous session on web) — treat as no session rather
+      // than hanging on the splash screen forever.
+      await _safeClear();
       state = AuthState.unauthenticated;
     }
   }
@@ -63,14 +70,32 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
-    final refreshToken = await _tokenStorage.readRefreshToken();
+    String? refreshToken;
     try {
-      if (refreshToken != null) {
-        await _repository.logout(refreshToken);
-      }
+      refreshToken = await _tokenStorage.readRefreshToken();
+    } catch (_) {
+      // Storage unreadable — nothing to blacklist server-side via the body,
+      // fall through to a local-only logout below.
+    }
+    try {
+      // Always call the endpoint, even with no local refresh token: on web
+      // there's never one to read (ADR-0007) — the backend blacklists and
+      // clears whatever the httpOnly cookie carries instead.
+      await _repository.logout(refreshToken);
     } finally {
-      await _tokenStorage.clear();
+      await _safeClear();
       state = AuthState.unauthenticated;
+    }
+  }
+
+  /// [TokenStorage.clear] can itself throw on web if the underlying
+  /// encryption key is corrupt (see [_bootstrap]) — swallow that so we
+  /// still reach [AuthStatus.unauthenticated] instead of getting stuck.
+  Future<void> _safeClear() async {
+    try {
+      await _tokenStorage.clear();
+    } catch (_) {
+      // Best effort — the session is being treated as logged out either way.
     }
   }
 
@@ -85,7 +110,7 @@ class AuthController extends StateNotifier<AuthState> {
   /// Local-only logout used when a refresh attempt fails server-side —
   /// there is no valid refresh token left to blacklist.
   Future<void> forceLogout() async {
-    await _tokenStorage.clear();
+    await _safeClear();
     state = AuthState.unauthenticated;
   }
 }

@@ -6,9 +6,11 @@ import 'package:ngo_app/core/providers.dart';
 import 'package:ngo_app/core/theme/app_theme.dart';
 import 'package:ngo_app/features/health/health_service.dart';
 
-final _healthServiceProvider = Provider((ref) => HealthService(ref.watch(apiClientProvider)));
+final _healthServiceProvider =
+    Provider((ref) => HealthService(ref.watch(apiClientProvider)));
 
-final _healthStatusProvider = FutureProvider((ref) => ref.watch(_healthServiceProvider).fetchHealth());
+final _healthStatusProvider =
+    FutureProvider((ref) => ref.watch(_healthServiceProvider).fetchHealth());
 
 class HealthScreen extends ConsumerWidget {
   const HealthScreen({super.key});
@@ -30,14 +32,16 @@ class HealthScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.md),
                 Text(t('health.status_ok'), textAlign: TextAlign.center),
                 const SizedBox(height: AppSpacing.sm),
-                Text('version: ${health.version}', style: Theme.of(context).textTheme.bodyMedium),
+                Text(t('health.version', args: {'version': health.version}),
+                    style: Theme.of(context).textTheme.bodyMedium),
               ],
             ),
             loading: () => const CircularProgressIndicator(),
             error: (error, _) => Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+                const Icon(Icons.error_outline,
+                    color: AppColors.error, size: 48),
                 const SizedBox(height: AppSpacing.md),
                 Text(t('common.generic_error'), textAlign: TextAlign.center),
                 const SizedBox(height: AppSpacing.md),

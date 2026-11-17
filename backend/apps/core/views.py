@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db import DatabaseError, connection
 from django.utils import timezone
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -22,3 +23,18 @@ class HealthCheckView(APIView):
                 "time": timezone.now().isoformat(),
             }
         )
+
+
+class ReadinessView(APIView):
+    """Load-balancer readiness without disclosing database details."""
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = []
+
+    def get(self, request):
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+        except DatabaseError:
+            return Response({"status": "unavailable"}, status=503)
+        return Response({"status": "ok"})

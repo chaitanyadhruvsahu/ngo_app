@@ -1,6 +1,6 @@
 {
     "name": "NGO Fellow & Volunteer App",
-    "short_name": "ngo_app",
+    "short_name": "NGO Fellows",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#FAFAFA",

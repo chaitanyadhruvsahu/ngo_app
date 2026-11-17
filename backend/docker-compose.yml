@@ -1,4 +1,35 @@
 services:
+  minio:
+    image: ngo-app-minio-local:2025-10-15
+    build:
+      context: .
+      dockerfile: Dockerfile.minio
+    profiles: [storage]
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: ngo-local
+      MINIO_ROOT_PASSWORD: ngo-local-storage-only
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - ngo_app_minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio-init:
+    image: ngo-app-minio-local:2025-10-15
+    profiles: [storage]
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "mc alias set local http://minio:9000 ngo-local ngo-local-storage-only &&
+      mc mb --ignore-existing local/ngo-private && mc anonymous set none local/ngo-private"
+
   db:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -35,3 +66,4 @@ services:
 
 volumes:
   ngo_app_postgres_data:
+  ngo_app_minio_data:

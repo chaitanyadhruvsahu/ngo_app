@@ -1,0 +1,75 @@
+name: Release container
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'render.yaml'
+      - 'deploy/**'
+      - 'app/**'
+      - 'backend/**'
+      - '.github/workflows/release-ci.yml'
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ngo_ci
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: ngo_ci
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U ngo_ci" --health-interval 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build bundled production image
+        run: docker build -t ngo-prototype:test .
+      - name: Verify runtime user and imports
+        run: |
+          docker run --rm --entrypoint sh ngo-prototype:test -c 'test "$(id -u)" != 0 && python -c "import django, gunicorn, whitenoise" && test -f /app/web/index.html'
+      - name: Confirm missing production secrets fail closed
+        run: |
+          if docker run --rm ngo-prototype:test; then
+            echo 'Unsafe configuration was accepted'
+            exit 1
+          fi
+      - name: Production startup and same-origin smoke test
+        env:
+          DJANGO_SECRET_KEY: ci-only-configuration-smoke-test-not-a-real-secret-2026-0123456789
+          FIELD_ENCRYPTION_KEY: iOWXpjelpaYGY6NjU1VDGuqNBqkJjYMd7f64ZOxzgL0=
+          DATABASE_URL: postgres://ngo_ci:ci-only-password@127.0.0.1:5432/ngo_ci
+          DJANGO_ALLOWED_HOSTS: 127.0.0.1
+          FRONTEND_BASE_URL: https://pilot.test
+          STORAGE_BACKEND: s3
+          S3_BUCKET_NAME: ci-private-placeholder
+          S3_ENDPOINT_URL: https://storage.test
+          EMAIL_BACKEND: django.core.mail.backends.smtp.EmailBackend
+          EMAIL_HOST: smtp.test
+          DEFAULT_FROM_EMAIL: pilot@ngo.test
+        run: |
+          docker run -d --name ngo-ci-smoke --network host \
+            -e DJANGO_SECRET_KEY -e FIELD_ENCRYPTION_KEY -e DATABASE_URL \
+            -e DJANGO_ALLOWED_HOSTS -e FRONTEND_BASE_URL -e STORAGE_BACKEND \
+            -e S3_BUCKET_NAME -e S3_ENDPOINT_URL -e EMAIL_BACKEND \
+            -e EMAIL_HOST -e DEFAULT_FROM_EMAIL \
+            ngo-prototype:test sh -c 'sh /app/deploy/release.sh && sh /app/deploy/start.sh'
+          trap 'docker logs ngo-ci-smoke; docker stop ngo-ci-smoke' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent -H 'X-Forwarded-Proto: https' http://127.0.0.1:8000/api/v1/ready; then break; fi
+            sleep 2
+          done
+          python - <<'PY'
+          import urllib.request
+          for path in ('/', '/api/v1/ready', '/main.dart.js'):
+              request = urllib.request.Request('http://127.0.0.1:8000' + path,
+                  headers={'X-Forwarded-Proto': 'https', 'Accept-Encoding': 'gzip'})
+              with urllib.request.urlopen(request, timeout=10) as response:
+                  assert response.status == 200
+                  assert response.headers['Strict-Transport-Security']
+                  if path == '/main.dart.js':
+                      assert response.headers['Content-Encoding'] == 'gzip'
+          PY

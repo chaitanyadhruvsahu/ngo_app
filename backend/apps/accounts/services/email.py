@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class EmailService:
     @staticmethod
     def send_verification_email(user: User, raw_token: str) -> None:
-        link = f"{settings.FRONTEND_BASE_URL}/verify-email?{urlencode({'token': raw_token})}"
+        link = f"{settings.FRONTEND_BASE_URL.rstrip('/')}/#/verify-email?{urlencode({'token': raw_token})}"
         send_mail(
             subject="Verify your account",
             message=f"Confirm your email to activate your account:\n\n{link}",
@@ -31,7 +31,10 @@ class EmailService:
 
     @staticmethod
     def send_password_reset_email(user: User, raw_token: str) -> None:
-        link = f"{settings.FRONTEND_BASE_URL}/reset-password?{urlencode({'token': raw_token})}"
+        link = (
+            f"{settings.FRONTEND_BASE_URL.rstrip('/')}/#/reset-password/confirm?"
+            f"{urlencode({'token': raw_token})}"
+        )
         send_mail(
             subject="Reset your password",
             message=f"Reset your password using this link:\n\n{link}",

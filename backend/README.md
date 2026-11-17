@@ -66,6 +66,36 @@ See `apps/core/exceptions.py`.
 | `/api/v1/auth/password-reset/request` | POST | `{email}` — always `202`, never reveals existence |
 | `/api/v1/auth/password-reset/confirm` | POST | `{token, new_password}` — blacklists all outstanding refresh tokens for the user |
 
+## Profile, documents & volunteers (Phase 2)
+
+`apps.accounts` (profile), `apps.documents`, `apps.volunteers` — see `docs/phase-2-mandate.md`
+and its execution log for the full design/decision record. Endpoints:
+
+| Endpoint | Method | Notes |
+|---|---|---|
+| `/api/v1/profile/me` | GET/PATCH | Own profile only; includes decrypted Aadhaar/bank fields |
+| `/api/v1/documents` | GET/POST | Own documents; POST is multipart upload |
+| `/api/v1/documents/{id}/download` | GET | Streams the file; every access is logged |
+| `/api/v1/volunteers` | GET/POST | Own volunteers |
+| `/api/v1/volunteers/{id}` | GET/PATCH/DELETE | Own records only — 404 on someone else's ID |
+| `/api/v1/admin/fellows` | GET | Admin-only, paginated, no sensitive fields |
+| `/api/v1/admin/fellows/{id}` | GET | Admin-only, full detail including sensitive fields |
+| `/api/v1/admin/fellows/{id}/documents` | GET | Admin-only |
+| `/api/v1/admin/fellows/{id}/volunteers` | GET | Admin-only |
+
+New env vars (see `.env.example`):
+
+- `FIELD_ENCRYPTION_KEY` — required. Encrypts Aadhaar/bank columns at the application layer
+  (ADR-0008). Generate with:
+  `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`.
+  Startup fails fast with a clear error if this is missing or malformed — see `apps.core.checks`.
+- `STORAGE_BACKEND` — `local` (default, works out of the box, no Docker needed) or `s3` (**not
+  implemented yet** — raises `ImproperlyConfigured` at startup; see ADR-0009 for what real
+  object-storage support still needs).
+- `DOCUMENT_STORAGE_ROOT` — optional, only used by the `local` backend. Defaults to
+  `backend/document_storage/` (gitignored).
+- `MAX_UPLOAD_SIZE_MB` — default `10`.
+
 ## Security notes
 
 - Passwords hashed with Argon2id (`config/settings.py: PASSWORD_HASHERS`).

@@ -1,0 +1,88 @@
+# First deployment: follow docs/release/deployment.md. These are paid resources.
+services:
+  - type: web
+    name: ngo-prototype
+    runtime: docker
+    region: singapore
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeployTrigger: 'off'
+    preDeployCommand: sh /app/deploy/release.sh
+    healthCheckPath: /api/v1/ready
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ngo-prototype-db
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        sync: false
+      - key: FIELD_ENCRYPTION_KEY
+        sync: false
+      - key: STORAGE_BACKEND
+        value: s3
+      - key: S3_BUCKET_NAME
+        sync: false
+      - key: S3_ENDPOINT_URL
+        sync: false
+      - key: S3_REGION_NAME
+        value: auto
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.smtp.EmailBackend
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        value: '587'
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: EMAIL_USE_TLS
+        value: 'True'
+      - key: DEFAULT_FROM_EMAIL
+        sync: false
+      - key: JOB_GEOTAG_ENABLED
+        value: 'False'
+
+  - type: cron
+    name: ngo-reminders
+    runtime: docker
+    region: singapore
+    plan: starter
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    schedule: '* * * * *'
+    dockerCommand: python manage.py deliver_notifications
+    autoDeployTrigger: 'off'
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ngo-prototype-db
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        fromService:
+          type: web
+          name: ngo-prototype
+          envVarKey: DJANGO_SECRET_KEY
+      - key: FIELD_ENCRYPTION_KEY
+        fromService:
+          type: web
+          name: ngo-prototype
+          envVarKey: FIELD_ENCRYPTION_KEY
+
+databases:
+  - name: ngo-prototype-db
+    region: singapore
+    plan: basic-256mb
+    postgresMajorVersion: '16'
+    databaseName: ngo_app
+    user: ngo_app
+    ipAllowList: []

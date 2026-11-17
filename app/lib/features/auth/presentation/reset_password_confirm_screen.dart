@@ -13,10 +13,12 @@ class ResetPasswordConfirmScreen extends ConsumerStatefulWidget {
   final String? token;
 
   @override
-  ConsumerState<ResetPasswordConfirmScreen> createState() => _ResetPasswordConfirmScreenState();
+  ConsumerState<ResetPasswordConfirmScreen> createState() =>
+      _ResetPasswordConfirmScreenState();
 }
 
-class _ResetPasswordConfirmScreenState extends ConsumerState<ResetPasswordConfirmScreen> {
+class _ResetPasswordConfirmScreenState
+    extends ConsumerState<ResetPasswordConfirmScreen> {
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   bool _isSubmitting = false;
@@ -48,7 +50,7 @@ class _ResetPasswordConfirmScreenState extends ConsumerState<ResetPasswordConfir
           );
       if (mounted) setState(() => _success = true);
     } on ApiException catch (error) {
-      setState(() => _errorMessage = error.message);
+      if (mounted) setState(() => _errorMessage = error.userMessage);
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -61,7 +63,7 @@ class _ResetPasswordConfirmScreenState extends ConsumerState<ResetPasswordConfir
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 400),
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: _success ? _buildSuccess(context) : _buildForm(),
           ),
@@ -76,7 +78,9 @@ class _ResetPasswordConfirmScreenState extends ConsumerState<ResetPasswordConfir
       children: [
         const Icon(Icons.check_circle, color: Colors.green, size: 48),
         const SizedBox(height: AppSpacing.lg),
-        ElevatedButton(onPressed: () => context.go('/login'), child: Text(t('auth.login_title'))),
+        ElevatedButton(
+            onPressed: () => context.go('/login'),
+            child: Text(t('auth.login_title'))),
       ],
     );
   }
@@ -85,24 +89,31 @@ class _ResetPasswordConfirmScreenState extends ConsumerState<ResetPasswordConfir
     return Form(
       key: _formKey,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextFormField(
             controller: _passwordController,
             obscureText: true,
-            decoration: InputDecoration(labelText: t('auth.new_password_label')),
-            validator: (value) =>
-                (value == null || value.length < 10) ? t('auth.new_password_label') : null,
+            decoration:
+                InputDecoration(labelText: t('auth.new_password_label')),
+            validator: (value) => (value == null || value.length < 10)
+                ? t('auth.password_error')
+                : null,
           ),
           if (_errorMessage != null) ...[
             const SizedBox(height: AppSpacing.md),
-            Text(_errorMessage!, style: const TextStyle(color: AppColors.error)),
+            Text(_errorMessage!,
+                style: const TextStyle(color: AppColors.error)),
           ],
           const SizedBox(height: AppSpacing.lg),
           ElevatedButton(
             onPressed: _isSubmitting ? null : _submit,
             child: _isSubmitting
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2))
                 : Text(t('common.submit')),
           ),
         ],

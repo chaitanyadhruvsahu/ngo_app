@@ -1,5 +1,6 @@
 from urllib.parse import parse_qs, urlparse
 
+from django.conf import settings
 from django.core import mail
 from django.core.cache import cache
 from django.urls import reverse
@@ -12,7 +13,9 @@ from apps.accounts.services.tokens import issue_token
 
 def _extract_token_from_email(message) -> str:
     link = message.body.strip().splitlines()[-1]
-    query = parse_qs(urlparse(link).query)
+    route = urlparse(urlparse(link).fragment)
+    assert route.path in ("/verify-email", "/reset-password/confirm")
+    query = parse_qs(route.query)
     return query["token"][0]
 
 
@@ -114,6 +117,77 @@ class SignupVerifyLoginRefreshLogoutFlowTests(APITestCase):
         # No second account created, and no email sent for the existing address.
         self.assertEqual(User.objects.filter(email="taken@example.com").count(), 1)
         self.assertEqual(len(mail.outbox), 0)
+
+
+class RefreshTokenCookieTests(APITestCase):
+    """ADR-0007: the refresh token is set as an httpOnly cookie on login, in
+    addition to the JSON body, and /refresh and /logout must work off the
+    cookie alone — a web client never needs to read the refresh token out
+    of JS-visible storage.
+    """
+
+    def setUp(self):
+        cache.clear()
+        self.user = User.objects.create_user(
+            email="cookie-user@example.com", password="correct-horse-battery-1", status=User.Status.ACTIVE
+        )
+
+    def test_login_sets_httponly_refresh_cookie(self):
+        response = self.client.post(
+            reverse("auth-login"),
+            {"email": "cookie-user@example.com", "password": "correct-horse-battery-1"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        cookie = response.cookies[settings.REFRESH_TOKEN_COOKIE_NAME]
+        self.assertEqual(cookie.value, response.data["refresh_token"])
+        self.assertTrue(cookie["httponly"])
+        self.assertEqual(cookie["samesite"], settings.REFRESH_TOKEN_COOKIE_SAMESITE)
+        self.assertEqual(cookie["path"], settings.REFRESH_TOKEN_COOKIE_PATH)
+
+    def test_refresh_works_from_cookie_alone_no_body(self):
+        login_response = self.client.post(
+            reverse("auth-login"),
+            {"email": "cookie-user@example.com", "password": "correct-horse-battery-1"},
+        )
+        # Simulate a web client: the browser carries the cookie automatically;
+        # nothing is sent in the body.
+        self.client.cookies[settings.REFRESH_TOKEN_COOKIE_NAME] = login_response.data["refresh_token"]
+
+        refresh_response = self.client.post(reverse("auth-refresh"), {})
+        self.assertEqual(refresh_response.status_code, status.HTTP_200_OK)
+        self.assertTrue(refresh_response.data["access_token"])
+
+        # The rotated refresh token is re-cookied too.
+        rotated_cookie = refresh_response.cookies[settings.REFRESH_TOKEN_COOKIE_NAME]
+        self.assertEqual(rotated_cookie.value, refresh_response.data["refresh_token"])
+        self.assertNotEqual(rotated_cookie.value, login_response.data["refresh_token"])
+
+    def test_refresh_without_cookie_or_body_is_rejected(self):
+        response = self.client.post(reverse("auth-refresh"), {})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data["error"]["code"], "invalid_token")
+
+    def test_logout_from_cookie_alone_blacklists_and_clears_cookie(self):
+        login_response = self.client.post(
+            reverse("auth-login"),
+            {"email": "cookie-user@example.com", "password": "correct-horse-battery-1"},
+        )
+        refresh_token = login_response.data["refresh_token"]
+        access_token = login_response.data["access_token"]
+
+        self.client.cookies[settings.REFRESH_TOKEN_COOKIE_NAME] = refresh_token
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+        logout_response = self.client.post(reverse("auth-logout"), {})
+        self.assertEqual(logout_response.status_code, status.HTTP_204_NO_CONTENT)
+
+        cleared_cookie = logout_response.cookies[settings.REFRESH_TOKEN_COOKIE_NAME]
+        self.assertEqual(cleared_cookie.value, "")
+
+        # The blacklisted token can no longer refresh, cookie or not.
+        self.client.cookies[settings.REFRESH_TOKEN_COOKIE_NAME] = refresh_token
+        post_logout_refresh = self.client.post(reverse("auth-refresh"), {})
+        self.assertEqual(post_logout_refresh.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class PasswordResetFlowTests(APITestCase):

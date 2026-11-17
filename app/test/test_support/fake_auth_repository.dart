@@ -47,7 +47,7 @@ class FakeAuthRepository extends AuthRepository {
   }
 
   @override
-  Future<void> logout(String refreshToken) async {}
+  Future<void> logout(String? refreshToken) async {}
 
   @override
   Future<void> requestPasswordReset(String email) async {

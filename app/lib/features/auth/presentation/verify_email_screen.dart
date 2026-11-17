@@ -44,7 +44,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
       if (mounted) {
         setState(() {
           _state = _VerifyState.failure;
-          _errorMessage = error.message;
+          _errorMessage = error.userMessage;
         });
       }
     }
@@ -88,7 +88,8 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
           children: [
             const Icon(Icons.error_outline, color: AppColors.error, size: 48),
             const SizedBox(height: AppSpacing.md),
-            Text(_errorMessage ?? t('common.generic_error'), textAlign: TextAlign.center),
+            Text(_errorMessage ?? t('common.generic_error'),
+                textAlign: TextAlign.center),
             const SizedBox(height: AppSpacing.lg),
             ElevatedButton(
               onPressed: () => context.go('/login'),

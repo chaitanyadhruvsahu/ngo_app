@@ -11,10 +11,12 @@ class ResetPasswordRequestScreen extends ConsumerStatefulWidget {
   const ResetPasswordRequestScreen({super.key});
 
   @override
-  ConsumerState<ResetPasswordRequestScreen> createState() => _ResetPasswordRequestScreenState();
+  ConsumerState<ResetPasswordRequestScreen> createState() =>
+      _ResetPasswordRequestScreenState();
 }
 
-class _ResetPasswordRequestScreenState extends ConsumerState<ResetPasswordRequestScreen> {
+class _ResetPasswordRequestScreenState
+    extends ConsumerState<ResetPasswordRequestScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   bool _isSubmitting = false;
@@ -30,7 +32,9 @@ class _ResetPasswordRequestScreenState extends ConsumerState<ResetPasswordReques
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSubmitting = true);
     try {
-      await ref.read(authControllerProvider.notifier).requestPasswordReset(_emailController.text.trim());
+      await ref
+          .read(authControllerProvider.notifier)
+          .requestPasswordReset(_emailController.text.trim());
       if (mounted) setState(() => _submitted = true);
     } on ApiException {
       // The request endpoint is deliberately generic — treat any response
@@ -62,11 +66,14 @@ class _ResetPasswordRequestScreenState extends ConsumerState<ResetPasswordReques
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(Icons.mark_email_read_outlined, size: 48, color: AppColors.primary),
+        const Icon(Icons.mark_email_read_outlined,
+            size: 48, color: AppColors.primary),
         const SizedBox(height: AppSpacing.md),
         Text(t('auth.verify_email_pending'), textAlign: TextAlign.center),
         const SizedBox(height: AppSpacing.lg),
-        ElevatedButton(onPressed: () => context.go('/login'), child: Text(t('auth.login_title'))),
+        ElevatedButton(
+            onPressed: () => context.go('/login'),
+            child: Text(t('auth.login_title'))),
       ],
     );
   }
@@ -81,13 +88,18 @@ class _ResetPasswordRequestScreenState extends ConsumerState<ResetPasswordReques
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
             decoration: InputDecoration(labelText: t('auth.email_label')),
-            validator: (value) => (value == null || !value.contains('@')) ? t('auth.email_label') : null,
+            validator: (value) => (value == null || !value.contains('@'))
+                ? t('auth.email_error')
+                : null,
           ),
           const SizedBox(height: AppSpacing.lg),
           ElevatedButton(
             onPressed: _isSubmitting ? null : _submit,
             child: _isSubmitting
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2))
                 : Text(t('auth.send_reset_link_button')),
           ),
         ],

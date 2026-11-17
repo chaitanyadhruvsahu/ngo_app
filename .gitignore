@@ -10,6 +10,7 @@ dist/
 backend/.env
 backend/staticfiles/
 backend/mediafiles/
+backend/document_storage/
 .venv/
 venv/
 .coverage
@@ -34,6 +35,7 @@ app/*.iml
 app/android/.gradle/
 app/android/local.properties
 app/android/key.properties
+app/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
 app/web/index.html.bak
 
 # --- IDE / OS ---
@@ -48,3 +50,8 @@ app/web/index.html.bak
 !.env.example
 *.pem
 *.key
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.sqlite3-*
