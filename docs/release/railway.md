@@ -36,17 +36,24 @@ Generate a public HTTPS domain and add a PostgreSQL service. Set runtime variabl
 | `S3_REGION_NAME` | Region from bucket credentials |
 | `S3_ADDRESSING_STYLE` | `virtual` for current Railway buckets; confirm credentials |
 | `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Private bucket credentials |
-| `EMAIL_BACKEND` | `django.core.mail.backends.smtp.EmailBackend` |
-| `EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` | Transactional SMTP provider credentials |
-| `EMAIL_PORT` | `587` |
-| `EMAIL_USE_TLS` | `True` |
+| `EMAIL_BACKEND` | `apps.core.email_backend.ResendEmailBackend` |
+| `RESEND_API_KEY` | Sending API key entered directly in Railway; never in chat/source |
 | `DEFAULT_FROM_EMAIL` | Verified sender address |
 | `JOB_REMINDER_TIME_ZONE` | `Asia/Kolkata` |
 
 Never commit runtime credentials or copy local test/demo keys into production.
-The production checks deliberately reject missing SMTP, private storage or database
-configuration. Do not bypass these checks. Confirm outbound SMTP support on the
-selected Railway plan before enabling signup.
+The production checks deliberately reject missing email, private storage or database
+configuration. Do not bypass these checks. Railway blocks SMTP on Free, Trial and
+Hobby plans; use the HTTPS email backend above. SMTP remains an alternative on Pro
+and above with `django.core.mail.backends.smtp.EmailBackend` and the SMTP variables
+documented in `deployment.md`.
+
+For Resend, create an account, add a domain you control, publish the DNS records
+Resend provides, and wait for verification. Use a sender at that domain, such as
+`Saath <accounts@your-domain>`. Create a sending API key and enter it in the
+service's Variables tab. The shared `resend.dev` test sender is not a substitute
+for a verified NGO sender for fellows. Test actual delivery, verification links
+and password resets before launch.
 
 Keep uploads in the private bucket. Container files disappear on redeploy. Backend
 authorization continues to protect document/photo reads; do not expose the bucket.

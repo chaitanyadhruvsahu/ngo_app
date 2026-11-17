@@ -58,8 +58,15 @@ def production_configuration(app_configs, **kwargs):
         problems.append("The hosted pilot requires private S3/R2 storage; local files are ephemeral.")
     if settings.S3_ENDPOINT_URL and not settings.S3_ENDPOINT_URL.startswith("https://"):
         problems.append("The hosted object-storage endpoint must use HTTPS.")
-    if settings.EMAIL_BACKEND != "django.core.mail.backends.smtp.EmailBackend" or not settings.EMAIL_HOST:
-        problems.append("Configure SMTP delivery before enabling signup or password recovery.")
+    smtp_ready = (
+        settings.EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend" and settings.EMAIL_HOST
+    )
+    resend_ready = (
+        settings.EMAIL_BACKEND == "apps.core.email_backend.ResendEmailBackend"
+        and settings.RESEND_API_KEY
+    )
+    if not (smtp_ready or resend_ready):
+        problems.append("Configure SMTP or Resend delivery before enabling signup or password recovery.")
     if settings.DEFAULT_FROM_EMAIL.endswith(".example"):
         problems.append("DEFAULT_FROM_EMAIL must use the verified sender domain.")
     return [Error(message, id=f"core.E{number:03}") for number, message in enumerate(problems, 101)]

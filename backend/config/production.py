@@ -13,6 +13,9 @@ CSRF_TRUSTED_ORIGINS = [FRONTEND_BASE_URL] if FRONTEND_BASE_URL else []
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = True
+# Railway probes the container directly over HTTP. Only public readiness is
+# exempt; account, document and application routes continue to require HTTPS.
+SECURE_REDIRECT_EXEMPT = [r"^api/v1/ready$"]
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 REFRESH_TOKEN_COOKIE_SECURE = True
