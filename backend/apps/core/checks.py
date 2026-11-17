@@ -65,8 +65,13 @@ def production_configuration(app_configs, **kwargs):
         settings.EMAIL_BACKEND == "apps.core.email_backend.ResendEmailBackend"
         and settings.RESEND_API_KEY
     )
-    if not (smtp_ready or resend_ready):
+    if settings.EMAIL_AUTH_ENABLED and not (smtp_ready or resend_ready):
         problems.append("Configure SMTP or Resend delivery before enabling signup or password recovery.")
-    if settings.DEFAULT_FROM_EMAIL.endswith(".example"):
+    if settings.EMAIL_AUTH_ENABLED and settings.DEFAULT_FROM_EMAIL.endswith(".example"):
         problems.append("DEFAULT_FROM_EMAIL must use the verified sender domain.")
+    if (not settings.EMAIL_AUTH_ENABLED
+            and settings.EMAIL_BACKEND != "django.core.mail.backends.dummy.EmailBackend"):
+        problems.append(
+            "With email disabled, use the dummy email backend to avoid accidental delivery or token logs."
+        )
     return [Error(message, id=f"core.E{number:03}") for number, message in enumerate(problems, 101)]

@@ -73,6 +73,25 @@ minutes of delivery delay. See https://docs.railway.com/cron-jobs.
 
 ## Release verification
 
+### Pilot without email
+
+Set `EMAIL_AUTH_ENABLED=False` and
+`EMAIL_BACKEND=django.core.mail.backends.dummy.EmailBackend` together. Signup,
+verification/resend and password-reset endpoints return an explicit unavailable
+response without creating users/tokens or sending messages. The login screen
+reads `/api/v1/config` and hides the signup and password-reset links.
+
+Provision the initial accounts once using `python manage.py bootstrap_pilot`,
+with `PILOT_ADMIN_EMAIL`, `PILOT_ADMIN_PASSWORD`, `PILOT_FELLOW_EMAIL` and
+`PILOT_FELLOW_PASSWORD` supplied privately. Existing accounts and passwords are
+never changed. Additional users can be created by staff in `/admin/`; set active
+status and add a fellow profile for fellows. Handle password assistance manually.
+Remove the bootstrap command and its credential variables after provisioning.
+
+To enable email later, configure the verified sender and API key, choose the
+Resend backend, set `EMAIL_AUTH_ENABLED=True`, redeploy and test verification and
+recovery before inviting users to self-register.
+
 Create the first admin once with `python manage.py createsuperuser`. Do not run
 `seed_admin` on every deployment because it can reset an existing password.
 

@@ -38,3 +38,14 @@ class ReadinessView(APIView):
         except DatabaseError:
             return Response({"status": "unavailable"}, status=503)
         return Response({"status": "ok"})
+
+
+class PublicConfigView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = []
+
+    def get(self, request):
+        response = Response({"email_auth_enabled": settings.EMAIL_AUTH_ENABLED})
+        response["Cache-Control"] = "no-store"
+        return response

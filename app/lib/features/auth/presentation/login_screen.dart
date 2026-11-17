@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:ngo_app/core/api/api_exception.dart';
+import 'package:ngo_app/core/providers.dart';
 import 'package:ngo_app/core/i18n/translator.dart';
 import 'package:ngo_app/core/i18n/language_menu.dart';
 import 'package:ngo_app/core/theme/app_theme.dart';
@@ -51,6 +52,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final emailEnabled =
+        ref.watch(emailAuthEnabledProvider).asData?.value == true;
     final wide = MediaQuery.sizeOf(context).width >= 900;
     final form = Center(
       child: ConstrainedBox(
@@ -127,16 +130,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       : Text(t('auth.login_button')),
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                TextButton(
-                  onPressed: () => context.push('/reset-password/request'),
-                  child: Text(t('auth.forgot_password')),
-                ),
-                const Divider(height: AppSpacing.xl),
-                TextButton(
-                  onPressed: () => context.push('/signup'),
-                  child: Text(
-                      '${t('auth.no_account_prompt')} ${t('auth.signup_button')}'),
-                ),
+                if (emailEnabled)
+                  TextButton(
+                    onPressed: () => context.push('/reset-password/request'),
+                    child: Text(t('auth.forgot_password')),
+                  ),
+                if (emailEnabled) const Divider(height: AppSpacing.xl),
+                if (emailEnabled)
+                  TextButton(
+                    onPressed: () => context.push('/signup'),
+                    child: Text(
+                        '${t('auth.no_account_prompt')} ${t('auth.signup_button')}'),
+                  ),
+                if (!emailEnabled)
+                  const Padding(
+                      padding: EdgeInsets.only(top: 16),
+                      child: Text(
+                          'Use the account provided by your NGO team. For access or password help, contact your administrator.',
+                          textAlign: TextAlign.center,
+                          style:
+                              TextStyle(color: AppColors.muted, fontSize: 13))),
               ],
             ),
           ),

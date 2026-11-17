@@ -6,6 +6,8 @@ DEBUG = False
 PRODUCTION = True
 render_host = env("RAILWAY_PUBLIC_DOMAIN", default="") or env("RENDER_EXTERNAL_HOSTNAME", default="")
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[render_host] if render_host else [])
+if env("RAILWAY_PROJECT_ID", default="") and "healthcheck.railway.app" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append("healthcheck.railway.app")
 FRONTEND_BASE_URL = (env("FRONTEND_BASE_URL", default="") or (
     f"https://{render_host}" if render_host else ""
 )).rstrip("/")

@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.exceptions import APIException
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -56,7 +57,20 @@ def _refresh_token_from_request(request) -> str | None:
     return request.COOKIES.get(settings.REFRESH_TOKEN_COOKIE_NAME) or request.data.get("refresh_token")
 
 
-class SignupView(APIView):
+class EmailFlowUnavailable(APIException):
+    status_code = 503
+    default_code = "email_auth_disabled"
+    default_detail = "Email registration and recovery are unavailable. Contact your NGO administrator."
+
+
+class EmailFlowView(APIView):
+    def initial(self, request, *args, **kwargs):
+        if not settings.EMAIL_AUTH_ENABLED:
+            raise EmailFlowUnavailable()
+        return super().initial(request, *args, **kwargs)
+
+
+class SignupView(EmailFlowView):
     """Never reveals whether the email already had an account: the response
     is identical (201, same generic message) whether or not a new account
     was actually created.
@@ -87,7 +101,7 @@ class SignupView(APIView):
         )
 
 
-class VerifyEmailView(APIView):
+class VerifyEmailView(EmailFlowView):
     permission_classes = [AllowAny]
     throttle_scope = "auth-verify"
 
@@ -119,7 +133,7 @@ class VerifyEmailView(APIView):
         return Response({"message": "Email verified."}, status=status.HTTP_200_OK)
 
 
-class ResendVerificationView(APIView):
+class ResendVerificationView(EmailFlowView):
     """Not in the Phase 1 API table but required by the Reliability
     section: account creation is decoupled from email delivery, so this is
     the retry path when the original verification email never arrived.
@@ -244,7 +258,7 @@ class LogoutView(APIView):
         return response
 
 
-class PasswordResetRequestView(APIView):
+class PasswordResetRequestView(EmailFlowView):
     permission_classes = [AllowAny]
     throttle_scope = "auth-sensitive"
 
@@ -265,7 +279,7 @@ class PasswordResetRequestView(APIView):
         )
 
 
-class PasswordResetConfirmView(APIView):
+class PasswordResetConfirmView(EmailFlowView):
     permission_classes = [AllowAny]
     throttle_scope = "auth-sensitive"
 
